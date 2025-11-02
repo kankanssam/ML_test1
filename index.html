@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML 데이터 분석 퀴즈 (펭귄 & 붓꽃)</title>
+    <style>
+        /* --- 기본 & 폰트 설정 --- */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap');
+
+        :root {
+            --bg-color: #F0F4F8;       /* 파스텔 배경 (매우 연한 하늘색) */
+            --primary-color: #A7C7E7;  /* 파스텔 파랑 */
+            --secondary-color: #B2D8B2;/* 파스텔 초록 */
+            --accent-color: #E6A4B4;   /* 파스텔 핑크 (강조) */
+            --iris-color: #CBAACB;     /* 파스텔 보라 (붓꽃) */
+            --penguin-color: #A1CCD1;  /* 파스텔 청록 (펭귄) */
+            --text-color: #333;
+            --code-bg: #2d2d2d;
+            --border-color: #DDE7F0;
+            --explanation-bg: #FFFBEB; /* 해설 배경 (연한 노랑) */
+            --explanation-border: #FADF98; /* 해설 테두리 */
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --ai-glow: 0 0 15px rgba(167, 199, 231, 0.7);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column; /* 푸터를 하단에 두기 위해 */
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        /* --- 메인 앱 컨테이너 --- */
+        #app-container {
+            width: 100%;
+            max-width: 1000px;
+            background: linear-gradient(135deg, #ffffff 0%, #FDFEFE 100%);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid white;
+            overflow: hidden;
+        }
+
+        /* --- 헤더 --- */
+        header {
+            background: linear-gradient(120deg, var(--primary-color), #B1C9E7);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+            border-bottom: 3px solid var(--accent-color);
+        }
+
+        header h1 {
+            font-weight: 700;
+            font-size: 1.8rem;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .data-tag {
+            font-size: 0.9rem;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: 500;
+        }
+        .tag-penguin { background-color: var(--penguin-color); color: #333; }
+        .tag-iris { background-color: var(--iris-color); color: white; }
+
+        header p {
+            font-weight: 300;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        /* --- 메인 콘텐츠 영역 --- */
+        main {
+            padding: 25px;
+        }
+
+        /* --- 진행도 바 --- */
+        #progress-bar-container {
+            width: 100%;
+            height: 10px;
+            background-color: var(--border-color);
+            border-radius: 5px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: var(--secondary-color);
+            transition: width 0.4s ease;
+        }
+
+        /* --- 퀴즈 영역 --- */
+        #quiz-area {
+            margin-bottom: 25px;
+        }
+
+        #step-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            border-left: 5px solid var(--accent-color);
+            padding-left: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        #question-counter {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #777;
+            white-space: nowrap;
+        }
+
+        #prompt {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            background-color: #F8FAFC;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+        
+        /* 퀴즈 이미지/출력결과가 표시될 컨테이너 */
+        #quiz-content-display {
+             margin-top: 15px;
+        }
+
+        /* 그래프 설명 스타일 */
+        .graph-description-wrapper {
+            padding: 15px;
+            background-color: #F8FAFC;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            line-height: 1.6;
+            color: #333;
+        }
+        .graph-description-wrapper p {
+            margin-top: 5px;
+            font-style: italic;
+            color: #555;
+        }
+        
+        /* 코드 출력 결과 스타일 */
+        pre.code-output {
+            background-color: var(--code-bg);
+            color: #f0f0f0;
+            font-family: 'Fira Code', 'Monaco', monospace;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre; /* 중요: 공백과 줄바꿈 유지 */
+        }
+
+        /* --- 문제 유형별 컨테이너 --- */
+        #question-content-container {
+             margin-top: 20px;
+        }
+        
+        /* 드래그 앤 드롭 문제 */
+        #drag-drop-container {
+            display: grid;
+            grid-template-areas:
+                "target"
+                "source";
+            gap: 20px;
+        }
+
+        /* 드롭 대상 영역 */
+        #drop-zone-wrapper {
+            grid-area: target;
+        }
+
+        #drop-zone {
+            width: 100%;
+            min-height: 100px;
+            border: 3px dashed var(--border-color);
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background-color: #FCFDFE;
+            transition: all 0.3s ease;
+        }
+
+        #drop-zone.dragover {
+            background-color: #EAF2F8;
+            border-color: var(--primary-color);
+            box-shadow: var(--ai-glow);
+        }
+
+        #drop-zone-placeholder {
+            font-size: 1rem;
+            color: #999;
+            pointer-events: none;
+        }
+        
+        .code-block {
+            font-family: 'Fira Code', 'Monaco', monospace;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 15px;
+            font-size: 0.95rem;
+            cursor: grab;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .code-block.dropped {
+            background-color: var(--secondary-color);
+            color: white;
+            cursor: default;
+        }
+
+        /* 명령어 (드래그 소스) 영역 */
+        #command-source {
+            grid-area: source;
+            background-color: #F8FAFC;
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            padding: 20px;
+        }
+        
+        #command-source h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        #command-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .code-block:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+        }
+
+        .code-block.dragging {
+            opacity: 0.5;
+            transform: scale(1.05);
+        }
+        
+        /* 객관식 문제 */
+        #multiple-choice-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .choice-btn {
+            display: block;
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1rem;
+            font-weight: 500;
+            text-align: left;
+            background-color: white;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            line-height: 1.5;
+        }
+        
+        .choice-btn:hover:not(:disabled) {
+            border-color: var(--primary-color);
+            background-color: #F8FAFC;
+        }
+        
+        .choice-btn.selected {
+            border-color: var(--primary-color);
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        /* 정답/오답 피드백 */
+        .choice-btn.correct {
+            border-color: var(--secondary-color) !important;
+            background-color: var(--secondary-color) !important;
+            color: white !important;
+        }
+        .choice-btn.wrong {
+            border-color: var(--accent-color) !important;
+            background-color: var(--accent-color) !important;
+            color: white !important;
+        }
+        
+        .choice-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+        
+        /* 빈칸 채우기 문제 */
+        #fill-blank-container {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            background-color: var(--code-bg);
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Fira Code', 'Monaco', monospace;
+            color: #f0f0f0;
+            font-size: 1.1rem;
+        }
+        
+        .code-snippet {
+            white-space: pre;
+        }
+        
+        .fill-blank-input {
+            font-family: 'Fira Code', 'Monaco', monospace;
+            font-size: 1.1rem;
+            width: 150px;
+            padding: 8px;
+            border-radius: 5px;
+            border: 2px solid var(--primary-color);
+            background-color: #f0f0f0;
+            color: var(--text-color);
+        }
+        .fill-blank-input:focus {
+            outline: none;
+            box-shadow: var(--ai-glow);
+        }
+        
+        .fill-blank-input.correct {
+            border-color: var(--secondary-color);
+            background-color: #EAF7E9;
+        }
+        
+        .fill-blank-input.wrong {
+            border-color: var(--accent-color);
+            background-color: #FBEAEC;
+        }
+
+        /* --- *** NEW: 해설 영역 *** --- */
+        #explanation {
+            display: none; /* 평소엔 숨김 */
+            margin-top: 20px;
+            padding: 15px 20px;
+            background-color: var(--explanation-bg);
+            border: 1px solid var(--explanation-border);
+            border-radius: 10px;
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #5D4037;
+        }
+        
+        #explanation strong {
+            color: #D9534F;
+            font-weight: 700;
+        }
+
+
+        /* --- 하단 컨트롤 영역 --- */
+        #controls {
+            margin-top: 25px;
+            text-align: center;
+        }
+        
+        #feedback {
+            font-size: 1.1rem;
+            font-weight: 700;
+            height: 30px; /* 공간 확보 */
+            line-height: 30px;
+        }
+        .feedback-correct { color: var(--secondary-color); }
+        .feedback-wrong { color: var(--accent-color); }
+        
+        #check-answer-btn, #next-step-btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.2s ease;
+        }
+
+        #check-answer-btn {
+            background: linear-gradient(120deg, var(--primary-color), #B1C9E7);
+            color: white;
+        }
+        #check-answer-btn:disabled {
+            background: var(--border-color);
+            cursor: not-allowed;
+        }
+        
+        #next-step-btn {
+            display: none; /* 정답 맞추면 보이도록 */
+            background: linear-gradient(120deg, var(--accent-color), #E89AAE);
+            color: white;
+        }
+        
+        #next-step-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(230, 164, 180, 0.4);
+        }
+
+        /* --- 완료 화면 --- */
+        #completion-screen {
+            display: none; /* 마지막 단계에서 보이도록 */
+            padding: 40px;
+            text-align: center;
+        }
+        
+        #completion-screen h2 {
+            font-size: 2rem;
+            color: var(--secondary-color);
+            margin-bottom: 20px;
+        }
+        
+        /* --- *** NEW: 최종 점수 표시 *** --- */
+        #score-display {
+            font-size: 1.4rem;
+            font-weight: 500;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        #score-display strong {
+            font-size: 1.6rem;
+            color: var(--primary-color);
+        }
+        
+        #score-message {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+        }
+        
+        #restart-btn {
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        #restart-btn:hover {
+            opacity: 0.9;
+            box-shadow: var(--ai-glow);
+        }
+        
+        /* --- 푸터 --- */
+        #footer {
+            text-align: center;
+            color: #999;
+            font-size: 0.9rem;
+            padding-top: 20px;
+        }
+
+        /* --- 반응형 웹 --- */
+        @media (min-width: 768px) {
+            body { padding: 30px; }
+            main { padding: 30px 40px; }
+
+            #drag-drop-container {
+                grid-template-areas: "source target";
+                grid-template-columns: 1fr 1fr;
+                gap: 30px;
+            }
+            
+            #drop-zone-wrapper { justify-content: center; }
+            #drop-zone { min-height: 180px; }
+            
+            #multiple-choice-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+            
+            #controls {
+                display: flex;
+                align-items: center;
+                gap: 20px;
+            }
+            #feedback { text-align: left; }
+            #check-answer-btn, #next-step-btn { width: 250px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <header>
+            <h1>
+                <span class="data-tag tag-penguin">🐧 펭귄</span>
+                &
+                <span class="data-tag tag-iris">🌸 붓꽃</span>
+                ML 분석
+            </h1>
+            <p>데이터 분석 및 머신러닝 전처리 과정을 학습해봅시다!</p>
+        </header>
+
+        <main id="main-content">
+            <div id="progress-bar-container">
+                <div id="progress-bar"></div>
+            </div>
+
+            <section id="quiz-area">
+                <h2 id="step-title">
+                    <span>Step 1: 로딩 중...</span>
+                    <span id="question-counter"></span>
+                </h2>
+                <p id="prompt">문제를 불러오고 있습니다...</p>
+                <div id="quiz-content-display"></div>
+            </section>
+
+            <section id="question-content-container">
+            </section>
+            
+            <div id="explanation"></div>
+
+            <section id="controls">
+                <div id="feedback"></div>
+                <button id="check-answer-btn">정답 확인</button>
+                <button id="next-step-btn">다음 문제로</button>
+            </section>
+        </main>
+        
+        <div id="completion-screen">
+            <h2>🎉 모든 단계를 완료했습니다!</h2>
+            <h3 id="score-display">결과 로딩 중...</h3>
+            <p id="score-message">수고하셨습니다!</p>
+            <button id="restart-btn">처음부터 다시하기</button>
+        </div>
+    </div> <footer id="footer">
+        만든이 by 김깐깐
+    </footer>
+
+    <template id="drag-drop-template">
+        <div id="drag-drop-container">
+            <div id="drop-zone-wrapper">
+                <div id="drop-zone">
+                    <span id="drop-zone-placeholder">이곳에 올바른 명령어를 드래그하세요</span>
+                </div>
+            </div>
+            <div id="command-source">
+                <h3>[ 명령어 블록 ]</h3>
+                <div id="command-list">
+                    </div>
+            </div>
+        </div>
+    </template>
+    
+    <template id="multiple-choice-template">
+        <div id="multiple-choice-container">
+            </div>
+    </template>
+    
+    <template id="fill-blank-template">
+        <div id="fill-blank-container">
+            </div>
+    </template>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- 1. 데이터 정의 (*** NEW: explanation 키 추가 ***) ---
+            // 8단계, 단계별 5문제 출제 (10+ 문제 풀)
+            // MC 문제: choices[0]이 정답 (코드에서 섞음)
+            const quizData = [
+                {
+                    id: 0,
+                    title: "Step 1: 데이터 확인하기",
+                    questions: [
+                        { type: "drag", prompt: "펭귄(penguins) 데이터의 (행, 열) 크기(shape)를 확인하는 명령어를 드래그하세요. (df_penguin 변수 사용)", answer: "df_penguin.shape", distractors: ["df_penguin.info()", "df_penguin.head()", "df_penguin.columns"], explanation: "<strong>df.shape</strong>는 (행의 개수, 열의 개수)를 튜플 형태로 반환합니다. 데이터의 외형적 크기를 파악하는 가장 기본적인 명령어입니다." },
+                        { type: "drag", prompt: "붓꽃(iris) 데이터의 첫 5줄을 확인하여 데이터 구조를 파악하는 명령어를 드래그하세요. (df_iris 변수 사용)", answer: "df_iris.head()", distractors: ["df_iris.tail()", "df_iris.describe()", "df_iris.info()"], explanation: "<strong>df.head()</strong>는 데이터프레임의 첫 5줄(기본값)을 보여줍니다. 데이터가 어떻게 생겼는지, 컬럼명은 무엇인지 빠르게 파악할 수 있습니다." },
+                        { type: "drag", prompt: "펭귄(penguins) 데이터의 마지막 3줄을 확인하는 명령어를 드래그하세요.", answer: "df_penguin.tail(3)", distractors: ["df_penguin.head(3)", "df_penguin.sample(3)", "df_penguin.last(3)"], explanation: "<strong>df.tail(n)</strong>은 데이터의 마지막 n줄을 보여줍니다. `n=3`이므로 마지막 3줄을 확인합니다." },
+                        { type: "drag", prompt: "붓꽃(iris) 데이터의 모든 컬럼명을 확인하는 명령어를 드래그하세요.", answer: "df_iris.columns", distractors: ["df_iris.info()", "df_iris.dtypes", "df_iris.index"], explanation: "<strong>df.columns</strong> 속성은 데이터프레임의 모든 컬럼 이름(레이블)을 리스트 형태로 반환합니다." },
+                        { type: "mc", prompt: "펭귄 데이터에서 `df_penguin.info()`를 실행했습니다. 아래 출력 결과를 올바르게 해석한 것은?", 
+                          output: `<pre class="code-output">&lt;class 'pandas.core.frame.DataFrame'&gt;
+RangeIndex: 344 entries, 0 to 343
+Data columns (total 7 columns):
+ #   Column             Non-Null Count  Dtype  
+---  ------             --------------  -----  
+ 0   species            344 non-null    object 
+ 1   island             344 non-null    object 
+ 2   culmen_length_mm   342 non-null    float64
+ 3   culmen_depth_mm    342 non-null    float64
+ 4   flipper_length_mm  342 non-null    float64
+ 5   body_mass_g        342 non-null    float64
+ 6   sex                333 non-null    object 
+dtypes: float64(4), object(3)
+memory usage: 18.9+ KB</pre>`,
+                          choices: [
+                            "총 344개의 데이터가 있으며, 'sex' 컬럼에 11개의 결측치가 있다.",
+                            "총 7개의 데이터가 있으며, 모든 컬럼이 숫자형(float64)이다.",
+                            "데이터에 결측치가 전혀 존재하지 않는다.",
+                            "'species' 컬럼은 344개의 결측치를 가지고 있다."
+                          ], answer: 0, explanation: "<strong>df.info()</strong>는 데이터의 '건강검진표'입니다. 총 344개의 행(entries)이 있는데, 'sex' 컬럼은 'Non-Null Count'가 333개입니다. (344 - 333 = 11) 즉, 11개의 결측치(NA)가 존재합니다." },
+                        { type: "mc", prompt: "붓꽃 데이터에서 `df_iris.info()`를 실행했습니다. 아래 출력 결과를 올바르게 해석한 것은?", 
+                          output: `<pre class="code-output">&lt;class 'pandas.core.frame.DataFrame'&gt;
+RangeIndex: 150 entries, 0 to 149
+Data columns (total 5 columns):
+ #   Column        Non-Null Count  Dtype  
+---  ------        --------------  -----  
+ 0   sepal.length  150 non-null    float64
+ 1   sepal.width   150 non-null    float64
+ 2   petal.length  150 non-null    float64
+ 3   petal.width   150 non-null    float64
+ 4   variety       150 non-null    object 
+dtypes: float64(4), object(1)
+memory usage: 6.0+ KB</pre>`,
+                          choices: [
+                            "총 150개의 데이터가 있으며, 결측치가 하나도 없다.",
+                            "총 5개의 데이터가 있으며, 'variety' 컬럼에 결측치가 있다.",
+                            "모든 컬럼이 문자열(object) 타입이다.",
+                            "데이터의 행(row)은 149개이다."
+                          ], answer: 0, explanation: "총 150개의 행(entries)이 있는데, 5개 컬럼 모두 'Non-Null Count'가 150개입니다. 이는 총 행의 수와 일치하므로, 결측치가 하나도 없는 '깨끗한' 데이터임을 의미합니다." },
+                        { type: "mc", prompt: "`df.shape` 명령어의 실행 결과 `(150, 5)`는 무엇을 의미하나요?", 
+                          choices: [
+                            "150개의 행(row)과 5개의 열(column)",
+                            "5개의 행(row)과 150개의 열(column)",
+                            "150개의 결측치와 5개의 컬럼",
+                            "파일 크기가 150 * 5 바이트"
+                          ], answer: 0, explanation: "<strong>df.shape</strong> 속성은 (행의 개수, 열의 개수)를 튜플로 반환합니다. 따라서 (150, 5)는 150개의 행(데이터)과 5개의 열(특성)을 의미합니다." },
+                        { type: "drag", prompt: "펭귄(penguins) 데이터의 컬럼별 데이터 타입을 확인하는 명령어를 드래그하세요.", answer: "df_penguin.dtypes", distractors: ["df_penguin.info()", "df_penguin.types", "df_penguin.columns"], explanation: "<strong>df.dtypes</strong> 속성은 각 컬럼의 데이터 타입(Dtype)을 시리즈 형태로 반환합니다. (예: float64, object)" },
+                        { type: "drag", prompt: "붓꽃(iris) 데이터에서 'variety' 컬럼의 고유한(unique) 값들만 확인하는 명령어를 드래그하세요.", answer: "df_iris['variety'].unique()", distractors: ["df_iris['variety'].count()", "df_iris['variety'].all()", "df_iris.unique()"], explanation: "<strong>.unique()</strong> 메소드는 특정 컬럼에 존재하는 고유한 값들(중복 제거)을 배열(array) 형태로 보여줍니다. (예: ['Setosa', 'Versicolor', 'Virginica'])" },
+                        { type: "mc", prompt: "데이터프레임 `df`의 첫 10줄을 확인하고 싶을 때 올바른 명령어는?", 
+                          choices: [
+                            "df.head(10)",
+                            "df.head[10]",
+                            "df.top(10)",
+                            "df.show(10)"
+                          ], answer: 0, explanation: "<strong>df.head(n)</strong>은 첫 n개의 행을 보여줍니다. n을 생략하면 기본값 5줄을 보여줍니다. 10줄을 보려면 괄호 안에 10을 넣습니다." },
+                        { type: "fill-blank", prompt: "데이터의 기본 정보(컬럼, 결측치, 타입)를 한 번에 확인하는 명령어입니다. 빈칸을 채우세요.", text: "df.BLANK()", answer: "info", explanation: "<strong>df.info()</strong>는 데이터프레임의 요약 정보를 제공하며, 특히 컬럼별 결측치 개수(Non-Null Count)와 데이터 타입(Dtype)을 확인하는 데 필수적입니다." }
+                    ]
+                },
+                {
+                    id: 1,
+                    title: "Step 2: 통계 요약",
+                    questions: [
+                        { type: "drag", prompt: "붓꽃(iris) 데이터의 숫자형 컬럼들(sepal.length 등)의 평균, 표준편차, 4분위수 등을 요약하는 명령어를 드래그하세요.", answer: "df_iris.describe()", distractors: ["df_iris.info()", "df_iris.mean()", "df_iris.corr()"], explanation: "<strong>df.describe()</strong>는 기본적으로 숫자형(numeric) 컬럼들의 핵심 기술 통계량을 요약해 줍니다. (count, mean, std, min, 25%, 50%, 75%, max)" },
+                        { type: "drag", prompt: "펭귄(penguins) 데이터에서 'species' 컬럼의 각 값(종)들이 몇 개씩 있는지 세는 명령어를 드래그하세요.", answer: "df_penguin['species'].value_counts()", distractors: ["df_penguin['species'].unique()", "df_penguin['species'].count()", "df_penguin.groupby('species')"], explanation: "<strong>.value_counts()</strong> 메소드는 범주형(object) 컬럼의 각 고유값이 몇 번 등장했는지(빈도)를 세어줍니다. 데이터의 분포를 파악하는 데 유용합니다." },
+                        { type: "mc", prompt: "붓꽃 데이터에서 `df_iris['variety'].value_counts()`를 실행했습니다. 이 결과의 의미로 올바른 것은?", 
+                          output: `<pre class="code-output">Setosa        50
+Versicolor    50
+Virginica     50
+Name: variety, dtype: int64</pre>`,
+                          choices: [
+                            "3가지 붓꽃 품종이 각각 50개씩, 총 150개 존재한다.",
+                            "붓꽃 데이터가 총 50개다.",
+                            "Setosa 품종만 50개이고 나머지는 알 수 없다.",
+                            "데이터에 결측치가 50개 있다."
+                          ], answer: 0, explanation: "<strong>value_counts()</strong>는 각 고유값(여기서는 붓꽃 품종)이 몇 개씩 있는지 세어줍니다. 3개 품종이 50개씩 균등하게 분포된 '균형 잡힌(balanced)' 데이터임을 알 수 있습니다." },
+                        { type: "mc", prompt: "펭귄 데이터에서 `df_penguin.describe()`를 실행했습니다. 아래 결과를 보고 'body_mass_g'(몸무게)의 평균(mean)값으로 올바른 것은?", 
+                          output: `<pre class="code-output">       culmen_length_mm  culmen_depth_mm  flipper_length_mm  body_mass_g
+count        342.000000       342.000000         342.000000   342.000000
+mean          43.921930        17.151170         200.915205  4201.754386
+std            5.459584         1.974793          14.061714   801.954536
+min           32.100000        13.100000         172.000000  2700.000000
+25%           39.225000        15.600000         190.000000  3550.000000
+50%           44.450000        17.300000         197.000000  4050.000000
+75%           48.500000        18.700000         213.000000  4750.000000
+max           59.600000        21.500000         231.000000  6300.000000</pre>`,
+                          choices: [
+                            "약 4201.75 g",
+                            "약 4050.00 g (이것은 50%, 즉 중앙값입니다)",
+                            "342.00 g (이것은 개수(count)입니다)",
+                            "6300.00 g (이것은 최대값(max)입니다)"
+                          ], answer: 0, explanation: "<strong>df.describe()</strong>의 출력에서 'mean' 행은 각 컬럼의 평균값을 나타냅니다. 'body_mass_g' 컬럼의 'mean' 행을 보면 4201.75... 입니다." },
+                        { type: "drag", prompt: "펭귄(penguins) 데이터에서 문자열(object) 타입 컬럼들의 통계(고유값 개수, 최빈값 등)만 요약하는 명령어를 드래그하세요.", answer: "df_penguin.describe(include='object')", distractors: ["df_penguin.describe()", "df_penguin.info()", "df_penguin.objects()"], explanation: "<strong>df.describe(include='object')</strong>는 숫자형이 아닌 object(문자열) 타입 컬럼들의 통계량(개수, 고유값 개수, 최빈값, 최빈값 빈도)을 보여줍니다." },
+                        { type: "drag", prompt: "붓꽃(iris) 데이터에서 'petal.length'(꽃잎 길이) 컬럼의 평균값만 계산하는 명령어를 드래그하세요.", answer: "df_iris['petal.length'].mean()", distractors: ["df_iris['petal.length'].sum()", "df_iris['petal.length'].max()", "df_iris.mean()"], explanation: "데이터프레임의 특정 컬럼을 선택(`df['col_name']`)한 뒤, <strong>.mean()</strong>, <strong>.max()</strong>, <strong>.min()</strong>, <strong>.sum()</strong> 등의 집계 함수를 사용할 수 있습니다." },
+                        { type: "drag", prompt: "펭귄(penguins) 데이터에서 'flipper_length_mm'(날개 길이)의 최대값을 찾는 명령어를 드래그하세요.", answer: "df_penguin['flipper_length_mm'].max()", distractors: ["df_penguin['flipper_length_mm'].min()", "df_penguin.max()", "df_penguin['flipper_length_mm'].top()"], explanation: "특정 컬럼의 최대값은 `df['col_name'].max()`로 찾을 수 있습니다. `df.max()`는 각 컬럼별 최대값을 모두 보여줍니다." },
+                        { type: "drag", prompt: "펭귄(penguins) 데이터에서 'island'(서식지 섬) 별로 그룹화하여 'body_mass_g'(몸무게)의 평균을 계산하는 명령어를 드래그하세요.", answer: "df_penguin.groupby('island')['body_mass_g'].mean()", distractors: ["df_penguin.mean('island')", "df_penguin.groupby('body_mass_g').mean()", "df_penguin.pivot_table('island')"], explanation: "<strong>.groupby('그룹화할 컬럼')</strong>로 그룹을 묶고, <strong>['계산할 컬럼']</strong>을 선택한 뒤, <strong>.mean()</strong> 같은 집계 함수를 적용합니다." },
+                        { type: "mc", prompt: "`df.describe()` 명령어에 대한 설명으로 올바른 것은?", 
+                          choices: [
+                            "기본적으로 숫자형 컬럼의 기술 통계(평균, 표준편차, 4분위수 등)를 보여준다.",
+                            "데이터의 첫 5줄을 보여준다. (df.head())",
+                            "데이터의 컬럼 타입과 결측치 개수를 보여준다. (df.info())",
+                            "데이터의 모든 행을 그래프로 그려준다."
+                          ], answer: 0, explanation: "<strong>df.describe()</strong>는 숫자형 데이터의 분포를 빠르게 파악하기 위한 기술 통계 요약 명령어입니다. (평균, 중앙값(50%), 표준편차 등)" },
+                        { type: "fill-blank", prompt: "붓꽃(iris) 데이터에서 'variety' 컬럼으로 그룹화(groupby)한 뒤, 'petal.length'의 평균을 계산하는 코드입니다. 빈칸을 채우세요.", text: "df_iris.groupby('variety')['petal.length'].BLANK()", answer: "mean", explanation: "그룹화된(Grouped) 객체에 대해 <strong>.mean()</strong> (평균), <strong>.sum()</strong> (합계), <strong>.count()</strong> (개수) 등 다양한 집계 함수를 적용할 수 있습니다." }
+                    ]
+                },
+                {
+                    id: 2,
+                    title: "Step 3: 데이터 시각화",
+                    questions: [
+                        { type: "drag", prompt: "붓꽃(iris) 데이터의 'petal.length'(꽃잎 길이) 값의 분포를 히스토그램으로 그리는 (seaborn) 명령어를 드래그하세요.", answer: "sns.histplot(data=df_iris, x='petal.length')", distractors: ["sns.boxplot(data=df_iris, x='petal.length')", "sns.scatterplot(data=df_iris, x='petal.length')", "sns.lineplot(data=df_iris, x='petal.length')"], explanation: "<strong>sns.histplot()</strong> (히스토그램)은 특정 숫자형 변수의 분포(어떤 값에 데이터가 몰려 있는지)를 파악하는 데 사용됩니다." },
+                        { type: "drag", prompt: "펭귄(penguins) 데이터의 'species'(종) 별로 'body_mass_g'(몸무게)의 분포를 상자 그림(boxplot)으로 그리는 (seaborn) 명령어를 드래그하세요.", answer: "sns.boxplot(data=df_penguin, x='species', y='body_mass_g')", distractors: ["sns.histplot(data=df_penguin, x='species')", "sns.scatterplot(data=df_penguin, x='species', y='body_mass_g')", "sns.pairplot(df_penguin)"], explanation: "<strong>sns.boxplot()</strong>은 범주형 변수(x축, 'species')에 따른 숫자형 변수(y축, 'body_mass_g')의 분포를 비교할 때 유용합니다." },
+                        { type: "drag", prompt: "붓꽃(iris) 데이터의 'petal.length'와 'petal.width' 두 변수 간의 관계를 산점도(scatterplot)로 그리는 (seaborn) 명령어를 드래그하세요.", answer: "sns.scatterplot(data=df_iris, x='petal.length', y='petal.width')", distractors: ["sns.lineplot(data=df_iris, x='petal.length')", "sns.histplot(data=df_iris, x='petal.length')", "sns.pairplot(df_iris)"], explanation: "<strong>sns.scatterplot()</strong>은 두 숫자형 변수(x, y) 간의 관계(예: 비례, 반비례, 무관계)를 시각화하는 데 사용됩니다." },
+                        { type: "drag", prompt: "펭귄(penguins) 데이터의 모든 숫자형 변수 쌍 간의 관계를 한눈에 볼 수 있는 'pairplot'을 그리는 (seaborn) 명령어를 드래그하세요.", answer: "sns.pairplot(df_penguin)", distractors: ["sns.heatmap(df_penguin)", "sns.pair(df_penguin)", "sns.histplot(df_penguin)"], explanation: "<strong>sns.pairplot()</strong>은 데이터프레임의 모든 숫자형 변수 쌍에 대해 산점도를, 그리고 대각선에는 히스토그램(또는 KDE)을 그려주어 변수 간 관계를 한눈에 파악하게 해줍니다." },
+                        { type: "mc", prompt: "아래는 붓꽃(iris) 데이터의 'petal.length' (꽃잎 길이)에 대한 히스토그램입니다. 이 그래프를 올바르게 해석한 것은?",
+                          graphDescription: "붓꽃(iris)의 'petal.length' (꽃잎 길이)에 대한 히스토그램입니다. x축은 0에서 8까지이며, y축은 빈도(count)입니다. 그래프를 보면, 1~2 사이에 작은 봉우리가 하나 있고, 3~7 사이(특히 4-6)에 큰 봉우리가 있습니다. 즉, 데이터가 2개 혹은 3개의 그룹으로 나뉘는 경향을 보입니다. (Bimodal 또는 Multimodal)",
+                          choices: [
+                            "꽃잎 길이는 여러 그룹(아마도 품종)으로 나뉘는 경향이 있다.",
+                            "모든 붓꽃의 꽃잎 길이는 1~2 사이에 집중되어 있다.",
+                            "꽃잎 길이는 완벽한 단일 정규분포를 따른다.",
+                            "꽃잎 길이(petal.length)와 꽃잎 너비(petal.width)는 관계가 없다."
+                          ], answer: 0, explanation: "히스토그램의 봉우리가 여러 개(Multimodal)라는 것은, 데이터가 이질적인 여러 그룹으로 구성되어 있을 가능성이 높다는 의미입니다. 붓꽃 데이터에서는 3가지 품종('variety')이 서로 다른 'petal.length' 분포를 갖기 때문에 이런 모양이 나타납니다." },
+                        { type: "mc", prompt: "아래는 펭귄(penguins) 데이터의 'species'(종) 별 'flipper_length_mm'(날개 길이)를 나타낸 박스 플롯(Boxplot)입니다. 이 그래프를 올바르게 해석한 것은?",
+                          graphDescription: "펭귄 3종(Adelie, Chinstrap, Gentoo)에 대한 날개 길이(flipper_length_mm) 박스 플롯입니다. Adelie와 Chinstrap 종의 상자(중앙 50% 데이터)는 180~200mm 근처에 겹쳐있지만, Gentoo 종의 상자는 210~225mm 사이로 확연히 높게 위치해 있습니다. Adelie와 Chinstrap 종에서는 상자 바깥에 몇 개의 점(이상치)이 보입니다.",
+                          choices: [
+                            "Gentoo 종이 다른 두 종보다 날개 길이가 확연히 길다.",
+                            "Adelie 종이 날개 길이가 가장 길다.",
+                            "Chinstrap 종은 이상치(outlier)가 존재하지 않는다.",
+                            "세 종의 날개 길이 분포는 거의 동일하다."
+                          ], answer: 0, explanation: "박스 플롯(Boxplot)의 상자 위치를 비교하면 분포의 차이를 알 수 있습니다. Gentoo 종의 상자(중앙값, 4분위수)가 다른 두 종보다 훨씬 높은 y축 값에 위치하므로, Gentoo 종의 날개 길이가 확연히 길다는 것을 알 수 있습니다." },
+                        { type: "mc", prompt: "붓꽃 데이터에서 'petal.length'와 'petal.width'의 산점도(scatterplot)를 그렸습니다. 이 그래프를 올바르게 해석한 것은?",
+                          graphDescription: "x축 'petal.length', y축 'petal.width'인 산점도입니다. 점들이 왼쪽 아래에서 오른쪽 위로 뚜렷하게 직선 형태로 분포합니다. 또한 점들이 세 개의 뚜렷한 군집(cluster)을 형성하고 있습니다.",
+                          choices: [
+                            "꽃잎 길이(petal.length)가 길수록 꽃잎 너비(petal.width)도 넓어지는 강한 양의 상관관계가 있다.",
+                            "꽃잎 길이가 길수록 꽃잎 너비는 좁아지는 음의 상관관계가 있다.",
+                            "두 변수 간에는 아무런 관계가 없다.",
+                            "데이터가 하나의 큰 원형 군집을 이루고 있다."
+                          ], answer: 0, explanation: "산점도의 점들이 왼쪽 아래에서 오른쪽 위로 향하는 패턴(우상향)을 보이면 <strong>양의 상관관계</strong>를 의미합니다. 즉, 한 변수가 증가할 때 다른 변수도 증가하는 경향이 있습니다." },
+                        { type: "drag", prompt: "펭귄(penguins) 데이터에서 'species'를 기준으로 색상을 다르게 하여(hue) pairplot을 그리는 명령어를 드래그하세요.", answer: "sns.pairplot(df_penguin, hue='species')", distractors: ["sns.pairplot(df_penguin, color='species')", "sns.pairplot(df_penguin, group='species')", "sns.pairplot(hue='species')"], explanation: "Seaborn 시각화에서 <strong>hue='컬럼명'</strong> 옵션은 해당 범주형 컬럼의 값에 따라 색상을 다르게 지정합니다. 이를 통해 그룹별 차이를 명확하게 볼 수 있습니다." },
+                        { type: "mc", prompt: "`sns.pairplot(df, hue='species')` 명령어를 실행했을 때, 'hue' 옵션의 역할은 무엇인가요?",
+                          choices: [
+                            "'species' 컬럼의 값(범주)에 따라 점의 색상을 다르게 표시한다.",
+                            "그래프의 제목을 'species'로 설정한다.",
+                            "x축과 y축을 모두 'species'로 설정한다.",
+                            "'species' 컬럼만 시각화한다."
+                          ], answer: 0, explanation: "<strong>hue</strong>는 '색조'를 의미합니다. `hue='species'`는 'species' 컬럼(Adelie, Gentoo, Chinstrap)의 고유값에 따라 점의 색을 다르게 칠하라는 명령어입니다." },
+                        { type: "fill-blank", prompt: "Seaborn을 사용하여 산점도(scatterplot)를 그릴 때, x축에 'sepal.length', y축에 'sepal.width'를 지정하는 코드입니다. 빈칸을 채우세요.", text: "sns.scatterplot(data=df_iris, x='sepal.length', y='BLANK')", answer: "sepal.width", explanation: "Seaborn의 대부분 함수는 `data=`로 데이터프레임을 지정하고, `x=`와 `y=`에 사용할 컬럼 이름을 문자열로 전달합니다." }
+                    ]
+                },
+                {
+                    id: 3,
+                    title: "Step 4: 결측치(NA) 처리",
+                    questions: [
+                        { type: "drag", prompt: "펭귄(penguins) 데이터의 컬럼별 결측치 개수를 합산하여 확인하는 명령어를 드래그하세요.", answer: "df_penguin.isnull().sum()", distractors: ["df_penguin.isnull().count()", "df_penguin.isna().mean()", "df_penguin.sum().isnull()"], explanation: "<strong>df.isnull()</strong>은 각 셀이 결측치인지(True/False) 알려주고, <strong>.sum()</strong>은 이 True(1) 값들을 열(axis=0) 기준으로 합산하여 컬럼별 결측치 총 개수를 보여줍니다." },
+                        { type: "mc", prompt: "`df_penguin.isnull().sum()`의 실행 결과가 다음과 같습니다. 'sex' 컬럼의 결측치 개수는?",
+                          output: `<pre class="code-output">species              0
+island               0
+culmen_length_mm     2
+culmen_depth_mm      2
+flipper_length_mm    2
+body_mass_g          2
+sex                 11
+dtype: int64</pre>`,
+                          choices: [
+                            "11개",
+                            "2개",
+                            "0개",
+                            "알 수 없다"
+                          ], answer: 0, explanation: "출력 결과는 각 컬럼명과 해당 컬럼의 결측치(null) 개수의 합(sum)을 보여줍니다. 'sex' 컬럼의 값은 11입니다." },
+                        { type: "drag", prompt: "펭귄(penguins) 데이터에서 결측치(NA)가 하나라도 있는 '행'을 모두 제거하는 명령어를 드래그하세요.", answer: "df_penguin.dropna()", distractors: ["df_penguin.fillna(0)", "df_penguin.drop()", "df_penguin.dropna(axis=1)"], explanation: "<strong>df.dropna()</strong>는 결측치(NA)가 *하나라도* 포함된 '행(row)'을 기본적으로 제거합니다. (axis=0이 기본값). 붓꽃 데이터에는 결측치가 없지만, 펭귄 데이터에는 이 명령어가 필수적입니다." },
+                        { type: "drag", prompt: "펭귄(penguins) 데이터에서 'body_mass_g' 컬럼의 결측치(NA)만 0으로 채우는 명령어를 드래그하세요.", answer: "df_penguin['body_mass_g'].fillna(0)", distractors: ["df_penguin['body_mass_g'].dropna(0)", "df_penguin.fillna(0)", "df_penguin.replace(NA, 0)"], explanation: "<strong>df.fillna(0)</strong>은 *모든* 결측치를 0으로 채웁니다. 특정 컬럼만 채우려면 `df['컬럼명'].fillna(0)`을 사용해야 합니다. (단, 0g은 이상치일 수 있으므로 평균/중앙값 대체가 더 좋습니다.)" },
+                        { type: "mc", prompt: "펭귄 데이터의 'sex' 컬럼에 11개의 결측치가 확인되었습니다. 이 결측치를 'sex' 컬럼의 최빈값(가장 자주 나온 값)으로 채우려 합니다. 올바른 처리 순서는?",
+                          choices: [
+                            "1. `df_penguin['sex'].mode()[0]` 로 최빈값을 찾는다. 2. `fillna()`로 결측치를 채운다.",
+                            "1. `df_penguin['sex'].mean()` 로 평균을 찾는다. 2. `fillna()`로 결측치를 채운다. (sex는 문자열이라 평균 불가)",
+                            "`df_penguin.dropna()` 를 실행한다. (최빈값으로 채우는 것이 아님)",
+                            "`df_penguin['sex'].fillna('UNKNOWN')` 로 채운다. (최빈값이 아님)"
+                          ], answer: 0, explanation: "숫자형 데이터는 주로 평균(mean)이나 중앙값(median)으로, <strong>문자열(범주형) 데이터는 최빈값(mode)</strong>으로 결측치를 대체하는 것이 일반적입니다. `.mode()`는 시리즈를 반환하므로 첫 번째 값([0])을 사용합니다." },
+                        { type: "mc", prompt: "`df.dropna(axis=1)` 명령어는 펭귄 데이터에서 어떻게 동작할까요?",
+                          output: `<pre class="code-output"># df_penguin.info() 요약
+# culmen_length_mm   342 non-null
+# sex                 333 non-null</pre>`,
+                          choices: [
+                            "결측치가 있는 'culmen_length_mm', 'sex' 등 5개 '열(column)'이 모두 삭제된다.",
+                            "결측치가 있는 '행(row)' 11개 (sex 기준)가 삭제된다.",
+                            "아무 일도 일어나지 않는다. (기본값은 axis=0)",
+                            "열(column) 이름에 'axis'가 포함된 것을 찾는다."
+                          ], answer: 0, explanation: "<strong>axis=0</strong>은 '행' 방향, <strong>axis=1</strong>은 '열' 방향을 의미합니다. `dropna(axis=1)`은 결측치가 하나라도 포함된 '열'을 통째로 삭제합니다. 펭귄 데이터에서는 결측치가 있는 5개 열이 모두 삭제됩니다." },
+                        { type: "drag", prompt: "펭귄(penguins) 데이터에서 'sex' 컬럼에 결측치(NA)가 있는 행만 필터링하여 확인하는 명령어를 드래그하세요.", answer: "df_penguin[df_penguin['sex'].isnull()]", distractors: ["df_penguin[df_penguin['sex'] == 'NA']", "df_penguin[df_penguin['sex'].isna() == False]", "df_penguin.isnull('sex')"], explanation: "<strong>.isnull()</strong> (또는 .isna()) 메소드는 결측치인 경우 True를 반환합니다. `df[조건]` 문법을 사용하여 `df['sex'].isnull()`이 True인 행만 필터링할 수 있습니다." },
+                        { type: "fill-blank", prompt: "결측치가 하나라도 있는 '행'을 제거하는 `dropna` 명령어입니다. '행'을 의미하는 `axis` 값은 무엇일까요?", text: "df.dropna(axis=BLANK)", answer: "0", explanation: "Pandas에서 <strong>axis=0</strong>은 '행(row)'을, <strong>axis=1</strong>은 '열(column)'을 의미합니다. `dropna()`의 기본값은 `axis=0`입니다." },
+                        { type: "fill-blank", prompt: "모든 결측치를 0으로 채우는 명령어입니다. 빈칸을 채우세요.", text: "df.BLANK(0)", answer: "fillna", explanation: "<strong>df.fillna(value)</strong>는 DataFrame 내의 모든 결측치(NA)를 'value'로 채웁니다(fill)." },
+                        { type: "mc", prompt: "붓꽃(iris) 데이터는 결측치가 없습니다. 만약 'sepal.width'의 결측치를 'sepal.width'의 *평균값*으로 채우려 한다면, 다음 중 가장 적절한 코드는?",
+                          choices: [
+                            "df_iris['sepal.width'] = df_iris['sepal.width'].fillna(df_iris['sepal.width'].mean())",
+                            "df_iris['sepal.width'] = df_iris['sepal.width'].fillna(0) (0은 이상치일 수 있음)",
+                            "df_iris['sepal.width'] = df_iris['sepal.width'].dropna() (결측치를 제거함)",
+                            "df_iris['sepal.width'] = df_iris['sepal.width'].fillna(df_iris['sepal.width'].mode()[0]) (평균이 아님)"
+                          ], answer: 0, explanation: "숫자형 데이터의 결측치는 <strong>평균(.mean())</strong>이나 <strong>중앙값(.median())</strong>으로 채우는 것이 일반적입니다. `df['col'].mean()`으로 평균을 계산하고, 이 값을 `fillna()`에 전달합니다." }
+                    ]
+                },
+                {
+                    id: 4,
+                    title: "Step 5: 이상치(Outlier) 처리",
+                    questions: [
+                        { type: "mc", prompt: "아래는 펭귄(penguins) 데이터의 'flipper_length_mm'(날개 길이)에 대한 박스 플롯(Boxplot)입니다. 이상치(outlier)에 대한 설명으로 올바른 것은?",
+                          graphDescription: "날개 길이에 대한 박스 플롯입니다. 상자(Box)는 약 190mm에서 213mm 사이에 걸쳐 있습니다. 상자 위(Upper whisker)로 230mm 근처까지 선이 뻗어있고, 상자 아래(Lower whisker)로 172mm 근처까지 선이 뻗어 있습니다. 상자 위/아래로 벗어난 점(데이터 포인트)은 보이지 않습니다.",
+                          choices: [
+                            "이 그래프 상에서는 뚜렷한 이상치가 관찰되지 않는다.",
+                            "190mm와 213mm가 이상치이다. (Q1과 Q3, 4분위수)",
+                            "172mm와 230mm가 이상치이다. (최소/최대값)",
+                            "모든 데이터가 이상치이다."
+                          ], answer: 0, explanation: "박스 플롯(Boxplot)에서 <strong>이상치(Outlier)</strong>는 상자(Box)와 수염(Whisker)의 범위를 벗어난 데이터를 <strong>점(point)</strong>으로 표시합니다. 이 그래프 설명에서는 점이 관찰되지 않았으므로 이상치가 없습니다." },
+                        { type: "mc", prompt: "이상치(Outlier)를 탐지하는 일반적인 방법으로 적절하지 **않은** 것은?",
+                          choices: [
+                            "`df.info()`를 실행하여 Dtype을 확인한다. (이것은 결측치나 타입 확인용)",
+                            "Boxplot(상자 그림)을 그려서 상자 밖의 점들을 확인한다.",
+                            "Z-score를 계산하여 특정 값(예: 3)을 초과하는 데이터를 찾는다.",
+                            "IQR(Interquartile Range) 규칙을 사용하여 Q1 - 1.5*IQR 보다 작거나 Q3 + 1.5*IQR 보다 큰 값을 찾는다."
+                          ], answer: 0, explanation: "<strong>df.info()</strong>는 결측치(NA)의 개수와 데이터 타입(Dtype)을 확인하는 용도입니다. 이상치(비정상적으로 크거나 작은 값)를 탐지하는 것과는 직접적인 관련이 적습니다." },
+                        { type: "drag", prompt: "펭귄(penguins) 데이터에서 'sex' 컬럼의 값이 'MALE'인 행만 필터링하는 명령어를 드래그하세요.", answer: "df_penguin[df_penguin['sex'] == 'MALE']", distractors: ["df_penguin['sex'] == 'MALE'", "df_penguin.filter('MALE')", "df_penguin.groupby('sex').get('MALE')"], explanation: "Pandas의 필터링(boolean indexing)은 <strong>`df[조건]`</strong> 문법을 사용합니다. '조건' 부분인 `df_penguin['sex'] == 'MALE'`은 True/False로 이루어진 시리즈를 반환하고, `df[...]`가 True인 행만 남깁니다." },
+                        { type: "mc", prompt: "펭귄 데이터의 'sex' 컬럼을 확인하니 `['MALE', 'FEMALE', nan, '.']` 값이 있었습니다. `.`은 잘못 입력된 이상치(outlier)입니다. 이 `.` 값을 `nan` (결측치)으로 바꾸는 올바른 명령어는?",
+                          choices: [
+                            "df_penguin['sex'] = df_penguin['sex'].replace('.', np.nan)",
+                            "df_penguin['sex'] = df_penguin['sex'].replace('.', 'nan') (문자열 'nan'으로 바뀜)",
+                            "df_penguin['sex'].fillna('.') (nan을 .으로 채움)",
+                            "df_penguin['sex'].dropna('.')"
+                          ], answer: 0, explanation: "<strong>.replace(A, B)</strong>는 A 값을 B 값으로 변경합니다. `.`는 시스템이 인식하는 결측치(NA)가 아니므로, `np.nan` (Numpy의 결측치 표준)으로 변경하여 결측치로 통일시켜주는 것이 좋습니다." },
+                        { type: "drag", prompt: "붓꽃(iris) 데이터에서 'petal.width'가 0.2보다 작은 행만 필터링하는 명령어를 드래그하세요.", answer: "df_iris[df_iris['petal.width'] < 0.2]", distractors: ["df_iris[df_iris['petal.width'] == 0.2]", "df_iris.filter(0.2)", "df_iris.loc[< 0.2]"], explanation: "필터링(boolean indexing)은 등호(`==`)뿐만 아니라 부등호(<strong><</strong>, <strong>></strong>, <strong><=</strong>, <strong>>=</strong>)를 사용한 조건도 가능합니다." },
+                        { type: "drag", prompt: "붓꽃(iris) 데이터에서 'sepal.width'가 4.0보다 크거나(or) 2.1보다 작은 이상치를 찾는 명령어를 드래그하세요.", answer: "df_iris[(df_iris['sepal.width'] > 4.0) | (df_iris['sepal.width'] < 2.1)]", distractors: ["df_iris[df_iris['sepal.width'] > 4.0 & < 2.1]", "df_iris.query('sepal.width > 4.0 or < 2.1')", "df_iris[df_iris['sepal.width'] == 4.0]"], explanation: "Pandas에서 여러 조건을 결합할 때 '또는(or)'은 <strong>|</strong> (파이프) 연산자를, '그리고(and)'는 <strong>&</strong> (앰퍼샌드) 연산자를 사용합니다. 각 조건은 괄호로 묶어주어야 합니다." },
+                        { type: "mc", prompt: "데이터의 사분위수(Quartile)에서 IQR(Interquartile Range)은 무엇을 의미하나요?", 
+                          choices: [
+                            "Q3 (75% 지점) 값에서 Q1 (25% 지점) 값을 뺀 것",
+                            "데이터의 평균",
+                            "데이터의 중앙값(Q2)",
+                            "최대값에서 최소값을 뺀 것"
+                          ], answer: 0, explanation: "<strong>IQR (Interquartile Range, 사분위 범위)</strong>은 데이터의 중앙 50%가 퍼져있는 정도를 나타냅니다. <strong>(Q3 - Q1)</strong>로 계산하며, 박스 플롯(Boxplot)의 '상자' 길이에 해당합니다. 이상치 탐지에 사용됩니다." },
+                        { type: "mc", prompt: "IQR 규칙을 사용한 이상치 탐지에서, '정상 범위'를 벗어나는 값으로 간주되는 것은?", 
+                          choices: [
+                            "Q1 - (1.5 * IQR) 보다 작거나 Q3 + (1.5 * IQR) 보다 큰 값",
+                            "Q1과 Q3 사이의 값 (이것은 중앙 50%의 정상 범위)",
+                            "평균에서 1 표준편차를 벗어나는 값",
+                            "0보다 작은 값"
+                          ], answer: 0, explanation: "일반적인 IQR 규칙은 <strong>Q1 (1사분위수)</strong>에서 (1.5 * IQR) 만큼을 뺀 값보다 작거나, <strong>Q3 (3사분위수)</strong>에서 (1.5 * IQR) 만큼을 더한 값보다 큰 데이터를 이상치로 간주합니다." },
+                        { type: "fill-blank", prompt: "펭귄(penguins) 데이터에서 'body_mass_g'가 6000을 초과하는 행을 필터링하는 코드입니다. 빈칸을 채우세요.", text: "df_penguin[df_penguin['body_mass_g'] > BLANK]", answer: "6000", explanation: "`df[df['컬럼명'] > 6000]`은 'body_mass_g' 컬럼의 값이 6000을 초과하는(True) 모든 행을 선택합니다." },
+                        { type: "drag", prompt: "펭귄(penguins) 데이터에서 'sex' 컬럼의 값이 `.` 인 행을 'FEMALE'로 변경하는 명령어를 드래그하세요.", answer: "df_penguin['sex'] = df_penguin['sex'].replace('.', 'FEMALE')", distractors: ["df_penguin['sex'] = df_penguin['sex'].fillna('FEMALE')", "df_penguin['sex'].replace('.', 'FEMALE')", "df_penguin.loc['.', 'FEMALE']"], explanation: "<strong>.replace(A, B)</strong>는 A 값을 B 값으로 변경합니다. `fillna`는 결측치(NA)만 변경하므로 `.` 값은 변경하지 못합니다. 또한 변경된 결과를 다시 `df_penguin['sex']`에 할당(=)해야 저장됩니다." }
+                    ]
+                },
+                {
+                    id: 5,
+                    title: "Step 6: 정규화 (Scaling)",
+                    questions: [
+                        { type: "mc", prompt: "데이터 스케일링 (정규화 또는 표준화)을 하는 주된 이유는 무엇인가요?",
+                          choices: [
+                            "각 변수(feature)의 단위나 스케일(범위) 차이가 모델 학습에 영향을 주는 것을 방지하기 위해",
+                            "데이터의 결측치를 제거하기 위해",
+                            "데이터의 행 개수를 늘리기 위해",
+                            "데이터를 시각화하기 쉽게 만들기 위해"
+                          ], answer: 0, explanation: "펭귄 데이터의 'body_mass_g'(2700~6300)와 'culmen_depth_mm'(13~21)처럼, 특성(feature)간 스케일 차이가 크면 모델이 스케일이 큰 변수에만 과도하게 영향을 받을 수 있습니다. 스케일링은 이 단위 차이를 맞춰주는 작업입니다." },
+                        { type: "mc", prompt: "다음 중 붓꽃(iris) 데이터에 스케일링을 적용해야 할 컬럼들로만 묶인 것은?",
+                          choices: [
+                            "`sepal.length`, `sepal.width`, `petal.length`, `petal.width` (숫자형 특성)",
+                            "`variety` (범주형 특성)",
+                            "모든 컬럼에 동일하게 적용해야 한다.",
+                            "스케일링은 필요하지 않다."
+                          ], answer: 0, explanation: "스케일링(정규화/표준화)은 <strong>숫자형(numeric) 특성</strong>에만 적용합니다. 'variety' 같은 문자열(object) 특성은 스케일링 대상이 아니며, 대신 인코딩(One-Hot 등)을 수행해야 합니다." },
+                        { type: "drag", prompt: "데이터를 평균 0, 표준편차 1로 변환하는 '표준화(Standardization)' 스케일러를 (sklearn) import 하는 명령어를 드래그하세요.", answer: "from sklearn.preprocessing import StandardScaler", distractors: ["from sklearn.preprocessing import MinMaxScaler", "from sklearn.preprocessing import RobustScaler", "from sklearn.model_selection import StandardScaler"], explanation: "<strong>StandardScaler</strong>는 각 특성의 평균을 0, 표준편차를 1로 만드는 <strong>표준화</strong>를 수행합니다. Scikit-learn(sklearn)의 `preprocessing` 모듈에 포함되어 있습니다." },
+                        { type: "drag", prompt: "데이터를 0과 1 사이의 값으로 변환하는 '정규화(Normalization)' 스케일러를 (sklearn) import 하는 명령어를 드래그하세요.", answer: "from sklearn.preprocessing import MinMaxScaler", distractors: ["from sklearn.preprocessing import StandardScaler", "from sklearn.preprocessing import MaxAbsScaler", "from sklearn.linear_model import MinMaxScaler"], explanation: "<strong>MinMaxScaler</strong>는 각 특성의 최소값을 0, 최대값을 1로 만드는 <strong>정규화</strong>를 수행합니다. (참고: RobustScaler는 중앙값과 IQR을 사용하여 이상치에 덜 민감합니다.)" },
+                        { type: "drag", prompt: "`StandardScaler` 객체를 `scaler`라는 이름으로 생성하는 명령어를 드래그하세요.", answer: "scaler = StandardScaler()", distractors: ["scaler = StandardScaler.fit()", "scaler = StandardScaler(0, 1)", "scaler = StandardScaler.transform()"], explanation: "Scikit-learn의 모델이나 스케일러는 `변수 = 클래스명()` 형태로 객체를 먼저 생성(초기화)한 후, `fit()`이나 `transform()` 메소드를 호출하여 사용합니다." },
+                        { type: "fill-blank", prompt: "`StandardScaler`를 `scaler`로 생성했습니다. 훈련 데이터 `X_train`에 스케일러를 학습(fit)시키고 동시에 변환(transform)하는 코드입니다. 빈칸을 채우세요.", text: "X_train_scaled = scaler.BLANK(X_train)", answer: "fit_transform", explanation: "<strong>.fit_transform()</strong>은 .fit()과 .transform()을 합친 것입니다. <strong>훈련(Train) 데이터</strong>에 대해서는 *데이터의 스케일(평균, 표준편차)을 학습(fit)함과 동시에 변환(transform)까지* 수행합니다." },
+                        { type: "fill-blank", prompt: "이미 학습된 `scaler`를 사용하여 *테스트 데이터* `X_test`를 변환(transform)하는 코드입니다. 빈칸을 채우세요. (주의: test 데이터는 fit하면 안됨)", text: "X_test_scaled = scaler.BLANK(X_test)", answer: "transform", explanation: "<strong>테스트(Test) 데이터</strong>는 훈련 데이터로 학습된 스케일(평균, 표준편차)을 *그대로* 적용해야 합니다. 따라서 절대 <strong>.fit()</strong>을 다시 호출하면 안 되며(데이터 누수), <strong>.transform()</strong>만 사용해야 합니다." },
+                        { type: "mc", prompt: "`StandardScaler`와 `MinMaxScaler`에 대한 설명으로 올바른 것은?",
+                          choices: [
+                            "`StandardScaler`는 평균 0, 표준편차 1로, `MinMaxScaler`는 0~1 사이로 변환한다.",
+                            "`StandardScaler`는 0~1 사이로, `MinMaxScaler`는 평균 0, 표준편차 1로 변환한다.",
+                            "두 스케일러는 기능이 완전히 동일하다.",
+                            "`MinMaxScaler`는 이상치(outlier)에 영향을 받지 않지만, `StandardScaler`는 영향을 받는다."
+                          ], answer: 0, explanation: "<strong>StandardScaler (표준화)</strong>: 평균 0, 표준편차 1. <strong>MinMaxScaler (정규화)</strong>: 최소 0, 최대 1. (참고: `MinMaxScaler`는 최소/최대값을 사용하므로 이상치에 매우 민감합니다.)" },
+                        { type: "mc", prompt: "테스트 데이터(test set)를 스케일링할 때 `fit_transform()` 대신 `transform()`만 사용하는 이유는 무엇인가요?",
+                          choices: [
+                            "훈련 데이터(train set)의 스케일(평균, 표준편차 등)을 *동일하게* 적용해야 하므로 (정보 누수 방지)",
+                            "테스트 데이터는 스케일링하면 안 되므로",
+                            "테스트 데이터는 `fit()` 함수를 지원하지 않으므로",
+                            "`transform()`이 `fit_transform()`보다 빠르므로"
+                          ], answer: 0, explanation: "테스트 데이터로 `fit`을 다시 하면, 테스트 데이터의 평균과 표준편차로 스케일링이 됩니다. 이는 '훈련할 때는 몰랐던' 테스트 데이터의 정보가 스케일링에 '누수(leak)'되는 것이며, 모델 성능을 부정확하게 평가하게 만듭니다. 훈련 데이터의 스케일을 그대로 적용해야 합니다." },
+                        { type: "drag", prompt: "펭귄(penguins) 데이터에서 숫자형 특성 4개만 선택하여 `numeric_features` 리스트를 만드는 명령어를 드래그하세요.", answer: "numeric_features = ['culmen_length_mm', 'culmen_depth_mm', 'flipper_length_mm', 'body_mass_g']", distractors: ["numeric_features = ['species', 'island', 'sex']", "numeric_features = df_penguin.columns", "numeric_features = df_penguin.select_dtypes('number')"], explanation: "스케일링이나 인코딩을 적용하기 위해, 컬럼의 종류(숫자형/범주형)에 따라 컬럼 이름들을 리스트로 미리 정의해 두면 편리합니다." }
+                    ]
+                },
+                {
+                    id: 6,
+                    title: "Step 7: 상관관계 분석",
+                    questions: [
+                        { type: "drag", prompt: "붓꽃(iris) 데이터의 숫자형 변수 간 상관관계 행렬(correlation matrix)을 계산하는 명령어를 드래그하세요.", answer: "df_iris.corr()", distractors: ["df_iris.describe()", "df_iris.info()", "df_iris.cov()"], explanation: "<strong>df.corr()</strong> (Pearson 상관계수)는 데이터프레임의 숫자형 컬럼들 간의 *선형* 관계를 -1에서 1 사이의 값으로 계산합니다." },
+                        { type: "drag", prompt: "계산된 상관관계 행렬(corr_matrix)을 히트맵(heatmap)으로 시각화하고, 숫자를 표시(annotate)하는 (seaborn) 명령어를 드래그하세요.", answer: "sns.heatmap(corr_matrix, annot=True)", distractors: ["sns.pairplot(corr_matrix)", "sns.histplot(corr_matrix)", "sns.boxplot(corr_matrix)"], explanation: "<strong>sns.heatmap()</strong>은 상관관계 행렬처럼 숫자 값으로 이루어진 행렬을 색상으로 시각화합니다. <strong>annot=True</strong> 옵션은 각 셀에 숫자 값을 표시해 줍니다." },
+                        { type: "mc", prompt: "붓꽃 데이터의 상관관계 분석 결과, 'petal.length'와 'petal.width'의 상관계수가 0.96으로 나왔습니다. 이 값의 의미는?",
+                          output: `<pre class="code-output">              petal.length  petal.width
+petal.length      1.000000     0.962865
+petal.width       0.962865     1.000000</pre>`,
+                          choices: [
+                            "두 변수는 매우 강한 양의 선형 관계(비례 관계)에 있다.",
+                            "두 변수는 매우 강한 음의 선형 관계(반비례 관계)에 있다.",
+                            "두 변수는 거의 관계가 없다.",
+                            "데이터가 0.96% 일치한다."
+                          ], answer: 0, explanation: "상관계수는 1에 가까울수록 강한 <strong>양의 상관관계</strong>(하나가 증가하면 다른 하나도 증가)를, -1에 가까울수록 강한 <strong>음의 상관관계</strong>(하나가 증가하면 다른 하나는 감소)를, 0에 가까울수록 선형 관계가 없음을 의미합니다. 0.96은 매우 강한 양의 관계입니다." },
+                        { type: "mc", prompt: "펭귄 데이터의 상관관계 히트맵을 분석 중입니다. 'flipper_length_mm'(날개 길이)와 'body_mass_g'(몸무게)의 상관계수가 0.87로 높게 나왔습니다. 머신러닝 모델링 관점에서 이 현상을 무엇이라 부르며, 어떤 조치를 고려할 수 있나요?",
+                          graphDescription: "상관관계 히트맵에서 'flipper_length_mm'와 'body_mass_g' 셀이 매우 진한 붉은색(0.87)을 띠고 있습니다.",
+                          choices: [
+                            "다중공선성(Multicollinearity) 문제. 두 변수 중 하나를 제거하는 것을 고려한다.",
+                            "과적합(Overfitting) 문제. 데이터를 더 수집해야 한다.",
+                            "과소적합(Underfitting) 문제. 모델을 더 복잡하게 만들어야 한다.",
+                            "정규화(Normalization) 문제. 두 변수를 곱해서 사용해야 한다."
+                          ], answer: 0, explanation: "<strong>다중공선성</strong>은 입력 변수(특성)들 간에 상관관계가 너무 높아, 모델이 어떤 변수가 중요한지 해석하는 데 혼동을 주고 성능을 저해하는 문제입니다. (보통 0.85 이상이면 높다고 봅니다.) 해결책으로 두 변수 중 하나를 제거하거나 PCA 등을 사용합니다." },
+                        { type: "mc", prompt: "어떤 두 변수의 상관계수가 -0.92로 나왔습니다. 이는 무엇을 의미하나요?",
+                          choices: [
+                            "한 변수가 증가할 때 다른 변수는 강하게 감소하는 경향이 있다. (강한 음의 상관관계)",
+                            "두 변수는 거의 관계가 없다.",
+                            "한 변수가 증가할 때 다른 변수도 강하게 증가하는 경향이 있다.",
+                            "데이터에 오류가 있다. (상관계수는 음수가 될 수 없음)"
+                          ], answer: 0, explanation: "상관계수는 -1에 가까울수록 강한 <strong>음의 상관관계(반비례)</strong>를 의미합니다. -0.92는 매우 강한 음의 선형 관계입니다." },
+                        { type: "mc", prompt: "상관계수가 0.05로 나왔습니다. 이는 무엇을 의미하나요?",
+                          choices: [
+                            "두 변수 간에 *선형* 관계가 거의 없다.",
+                            "두 변수가 강한 음의 관계에 있다.",
+                            "두 변수가 강한 양의 관계에 있다.",
+                            "두 변수가 5%의 관계가 있다."
+                          ], answer: 0, explanation: "상관계수는 0에 가까울수록 <strong>선형 관계</strong>(직선 관계)가 약하다는 것을 의미합니다. (단, U자형 같은 비선형 관계는 있을 수 있습니다.)" },
+                        { type: "mc", prompt: "다중공선성(Multicollinearity) 문제가 심각할 경우 (예: 상관계수 > 0.9) 모델에 어떤 영향을 미칠 수 있나요?",
+                          choices: [
+                            "모델의 예측 성능을 저하시키고, 어떤 변수가 중요한지 해석하기 어려워진다.",
+                            "모델이 무조건 과적합(Overfitting)된다.",
+                            "모델이 무조건 과소적합(Underfitting)된다.",
+                            "아무런 영향을 미치지 않는다."
+                          ], answer: 0, explanation: "상관관계가 높은 변수 A, B가 있을 때, 모델은 A가 중요한지 B가 중요한지 헷갈리게 됩니다. (예: A에 가중치를 10, B에 0을 주거나, A에 5, B에 5를 주거나 결과가 비슷함) 이로 인해 모델의 안정성과 해석 가능성이 떨어집니다." },
+                        { type: "fill-blank", prompt: "펭귄(penguins) 데이터의 상관관계 행렬을 `corr_matrix` 변수에 저장하는 코드입니다. 빈칸을 채우세요.", text: "corr_matrix = df_penguin.BLANK()", answer: "corr", explanation: "<strong>.corr()</strong> 메소드는 숫자형 컬럼 간의 피어슨 상관계수 행렬을 계산합니다." },
+                        { type: "drag", prompt: "펭귄(penguins) 데이터에서 'species' 컬럼을 제외한 모든 변수 간의 pairplot을 그리는 명령어를 드래그하세요.", answer: "sns.pairplot(df_penguin.drop('species', axis=1))", distractors: ["sns.pairplot(df_penguin)", "sns.pairplot(df_penguin, hue='species')", "sns.pairplot(df_penguin, 'species')"], explanation: "`pairplot`은 숫자형 컬럼에 대해서만 작동합니다. 'species'는 문자열(object)이므로 `drop`을 이용해 제거한 뒤 실행해야 오류가 나지 않습니다." },
+                        { type: "drag", prompt: "상관관계 히트맵의 색상 맵(cmap)을 'coolwarm'으로 설정하는 (seaborn) 명령어를 드래그하세요.", answer: "sns.heatmap(corr_matrix, cmap='coolwarm')", distractors: ["sns.heatmap(corr_matrix, color='coolwarm')", "sns.heatmap(corr_matrix, style='coolwarm')", "sns.heatmap(corr_matrix, palette='coolwarm')"], explanation: "<strong>cmap</strong> (color map) 옵션은 히트맵의 색상 팔레트를 지정합니다. 'coolwarm', 'viridis', 'hot' 등 다양한 맵이 있으며, 'coolwarm'은 양수(따뜻한 색)와 음수(차가운 색)를 명확히 구분해 줍니다." }
+                    ]
+                },
+                {
+                    id: 7,
+                    title: "Step 8: 속성 검토 (Feature Engineering)",
+                    questions: [
+                        { type: "drag", prompt: "붓꽃(iris) 데이터의 'variety' 컬럼(문자열)을 원-핫 인코딩(One-Hot Encoding)하는 (pandas) 명령어를 드래그하세요.", answer: "pd.get_dummies(df_iris, columns=['variety'])", distractors: ["pd.to_numeric(df_iris['variety'])", "df_iris['variety'].astype('int')", "df_iris.encode('variety')"], explanation: "<strong>pd.get_dummies()</strong>는 Pandas에서 원-핫 인코딩을 수행하는 가장 간편한 방법입니다. `columns=['컬럼명']`으로 대상 컬럼을 지정하면 해당 컬럼이 0과 1로 이루어진 여러 개의 열(더미 변수)로 변환됩니다." },
+                        { type: "mc", prompt: "원-핫 인코딩(One-Hot Encoding)에 대한 설명으로 올바른 것은?",
+                          choices: [
+                            "범주형 변수를 0과 1로 이루어진 여러 개의 새로운 열(dummy variable)로 변환한다.",
+                            "모든 데이터를 0과 1 사이로 압축한다. (MinMaxScaler)",
+                            "데이터의 상관관계를 계산한다. (df.corr())",
+                            "데이터의 결측치를 1로 채운다."
+                          ], answer: 0, explanation: "<strong>원-핫 인코딩</strong>은 'Setosa', 'Versicolor' 같은 범주형 데이터를 [1,0,0], [0,1,0] 처럼 0과 1로 이루어진 여러 개의 열(더미 변수)로 변환합니다. 이는 모델이 범주 간의 서열(예: 1 < 2)을 잘못 학습하는 것을 방지합니다." },
+                        { type: "mc", prompt: "펭귄(penguins) 데이터의 'sex' 컬럼('MALE', 'FEMALE')을 0과 1로 변환(Label Encoding)하려 합니다. 다음 중 적절한 코드는?",
+                          choices: [
+                            "df_penguin['sex_encoded'] = df_penguin['sex'].map({'MALE': 1, 'FEMALE': 0})",
+                            "df_penguin['sex_encoded'] = pd.get_dummies(df_penguin['sex']) (이것은 원-핫 인코딩)",
+                            "df_penguin['sex_encoded'] = StandardScaler().fit_transform(df_penguin[['sex']]) (문자열에 적용 불가)",
+                            "df_penguin['sex_encoded'] = df_penguin['sex'].to_numeric() (숫자가 아니므로 오류)"
+                          ], answer: 0, explanation: "<strong>.map({key: value})</strong> 메소드는 'key'에 해당하는 값을 'value'로 변환합니다. 'MALE'은 1, 'FEMALE'은 0으로 바꾸는 <strong>레이블 인코딩</strong>을 수동으로 구현하는 방법입니다. ('sex'처럼 2개의 범주만 있을 때는 원-핫 인코딩 대신 사용하기도 합니다.)" },
+                        { type: "mc", prompt: "범주형 데이터를 인코딩하는 이유로 가장 적절한 것은?",
+                          choices: [
+                            "대부분의 머신러닝 모델은 문자열(object) 데이터를 입력으로 처리하지 못하기 때문에",
+                            "문자열 데이터는 항상 결측치를 포함하기 때문에",
+                            "데이터의 용량을 줄이기 위해",
+                            "데이터를 시각화하기 쉽게 만들기 위해"
+                          ], answer: 0, explanation: "머신러닝 모델은 본질적으로 수학적 계산(행렬 연산)을 기반으로 합니다. 따라서 'Adelie'나 'MALE' 같은 <strong>문자열(object)</strong>은 계산이 불가능하므로, 모델이 이해할 수 있는 <strong>숫자(0, 1 등)</strong>로 변환(인코딩)해 주어야 합니다." },
+                        { type: "drag", prompt: "펭귄(penguins) 데이터에서 'species' 컬럼(예측 대상 y)을 제거하여 특성(X) 데이터프레임 `X_penguin`을 만드는 명령어를 드래그하세요.", answer: "X_penguin = df_penguin.drop('species', axis=1)", distractors: ["X_penguin = df_penguin.drop('species', axis=0)", "X_penguin = df_penguin.remove('species')", "X_penguin = df_penguin.pop('species')"], explanation: "모델 학습 시, <strong>입력 특성(X)</strong>과 <strong>정답(y)</strong>을 분리해야 합니다. <strong>df.drop('컬럼명', axis=1)</strong>은 해당 '열(column)'을 제거하여 X 데이터를 만듭니다." },
+                        { type: "drag", prompt: "펭귄(penguins) 데이터에서 'species' 컬럼(예측 대상 y)만 선택하여 `y_penguin` 시리즈를 만드는 명령어를 드래그하세요.", answer: "y_penguin = df_penguin['species']", distractors: ["y_penguin = df_penguin.drop('species', axis=1)", "y_penguin = df_penguin[['species']]", "y_penguin = df_penguin.get('species')"], explanation: "모델 학습 시, <strong>입력 특성(X)</strong>과 <strong>정답(y)</strong>을 분리해야 합니다. <strong>df['컬럼명']</strong> (대괄호 1개)을 사용하여 해당 '열(column)'만 정답 데이터 y로 선택합니다." },
+                        { type: "fill-blank", prompt: "`df.drop('column_name', axis=BLANK)`에서 '열(column)'을 삭제하기 위한 `axis` 값은 무엇인가요?", text: "df.drop('species', axis=BLANK)", answer: "1", explanation: "Pandas에서 <strong>axis=0</strong>은 '행(row)'을, <strong>axis=1</strong>은 '열(column)'을 의미합니다. 열을 삭제할 때는 `axis=1`을 사용합니다." },
+                        { type: "mc", prompt: "붓꽃(iris) 데이터의 'petal.length'와 'petal.width' 두 특성의 상관관계가 0.96으로 매우 높았습니다 (다중공선성). 모델 학습 전, 이 두 특성을 어떻게 처리하는 것이 좋을까요?",
+                          choices: [
+                            "두 특성 중 하나만 선택하여 사용하거나, PCA 등으로 차원 축소를 고려한다.",
+                            "두 특성을 곱하여 하나의 새로운 특성으로 만든다.",
+                            "두 특성을 더하여 하나의 새로운 특성으로 만든다.",
+                            "상관관계가 높을수록 좋은 특성이므로 반드시 둘 다 사용한다."
+                          ], answer: 0, explanation: "<strong>다중공선성</strong>이 높으면 두 변수가 거의 같은 정보를 담고 있다는 뜻입니다. 둘 다 사용하면 모델에 혼란을 줄 수 있으므로, 하나를 제거(Feature Selection)하거나, 두 변수의 정보를 합친 새로운 변수를 만들거나(Feature Extraction, 예: PCA) 하는 것이 좋습니다." },
+                        { type: "drag", prompt: "붓꽃(iris) 데이터에서 'sepal.length'와 'sepal.width' 두 컬럼만 선택하여 `df_sepal`을 만드는 명령어를 드래그하세요. (대괄호 2개 사용)", answer: "df_sepal = df_iris[['sepal.length', 'sepal.width']]", distractors: ["df_sepal = df_iris['sepal.length', 'sepal.width']", "df_sepal = df_iris.loc['sepal.length', 'sepal.width']", "df_sepal = df_iris.get('sepal.length', 'sepal.width')"], explanation: "`df['col']` (대괄호 1개)는 시리즈(Series)를 반환하지만, <strong>`df[['col1', 'col2']]` (대괄호 2개)</strong>는 여러 컬럼으로 이루어진 <strong>데이터프레임(DataFrame)</strong>을 반환합니다." },
+                        { type: "mc", prompt: "데이터 전처리 파이프라인의 일반적인 순서로 가장 적절한 것은?",
+                          choices: [
+                            "결측치/이상치 처리 -> 범주형 인코딩 -> 수치형 스케일링 -> 모델 학습",
+                            "모델 학습 -> 결측치 처리 -> 스케일링 -> 인코딩",
+                            "스케일링 -> 인코딩 -> 결측치 처리 -> 모델 학습",
+                            "인코딩 -> 모델 학습 -> 스케일링 -> 결측치 처리"
+                          ], answer: 0, explanation: "일반적으로 데이터의 '클리닝(결측치/이상치 처리)'을 가장 먼저 하고, 그 다음 모델에 넣을 수 있도록 '인코딩'과 '스케일링'을 적용한 뒤, 마지막으로 '모델 학습'을 수행합니다." }
+                    ]
+                }
+            ];
+
+            // --- 2. 상태 변수 ---
+            let currentStepIndex = 0;
+            let currentQuestionIndex = 0; // 현재 단계 내에서의 문제 번호
+            let currentStepQuestions = []; // 현재 단계의 5문제
+            let currentQuestion = null; // 현재 출제된 질문 객체
+            let selectedAnswer = null; // 선택된 답 (객관식: originalIndex, 빈칸: text)
+            let draggedCommandElement = null; // 현재 드래그 중인 HTML 요소
+            let answeredCorrectly = false;
+            
+            // --- *** NEW: 점수 변수 *** ---
+            let score = 0;
+            
+            const totalSteps = quizData.length;
+            const QUESTIONS_PER_STEP = 5; // 단계별 5문제
+
+            // --- 3. DOM 요소 참조 ---
+            const mainContent = document.getElementById('main-content');
+            const stepTitle = document.getElementById('step-title').querySelector('span:first-child');
+            const questionCounter = document.getElementById('question-counter');
+            const progressBar = document.getElementById('progress-bar');
+            const promptEl = document.getElementById('prompt');
+            const quizContentDisplay = document.getElementById('quiz-content-display');
+            const questionContentContainer = document.getElementById('question-content-container');
+            const controlsEl = document.getElementById('controls');
+            const feedback = document.getElementById('feedback');
+            const checkAnswerBtn = document.getElementById('check-answer-btn');
+            const nextStepBtn = document.getElementById('next-step-btn');
+            const completionScreen = document.getElementById('completion-screen');
+            const restartBtn = document.getElementById('restart-btn');
+            
+            // --- *** NEW: 해설 DOM 참조 *** ---
+            const explanationEl = document.getElementById('explanation');
+            
+            // 템플릿 참조
+            const dragDropTemplate = document.getElementById('drag-drop-template');
+            const mcTemplate = document.getElementById('multiple-choice-template');
+            const fillBlankTemplate = document.getElementById('fill-blank-template');
+
+            // --- 4. 핵심 함수 ---
+
+            /** 1. 프로그램 시작 및 단계 로드 */
+            function startGame() {
+                currentStepIndex = 0;
+                currentQuestionIndex = 0;
+                // --- *** NEW: 점수 리셋 *** ---
+                score = 0; 
+                mainContent.style.display = 'block'; // 메인 콘텐츠 보이기
+                completionScreen.style.display = 'none'; // 완료 화면 숨기기
+                loadStep(currentStepIndex);
+            }
+
+            /** 2. 현재 단계에 맞는 랜덤 질문 5개 섞기 */
+            function loadStep(stepIndex) {
+                // 현재 단계 정보 가져오기
+                const stepData = quizData[stepIndex];
+                stepTitle.textContent = stepData.title;
+                
+                // 10개 이상의 질문 풀에서 5개를 랜덤으로 선택
+                currentStepQuestions = stepData.questions
+                    .sort(() => 0.5 - Math.random()) // 랜덤 섞기
+                    .slice(0, QUESTIONS_PER_STEP); // 5개 자르기
+                
+                currentQuestionIndex = 0;
+                loadQuestion();
+                updateProgressBar();
+            }
+
+            /** 3. 현재 문제 로드 */
+            function loadQuestion() {
+                answeredCorrectly = false;
+                selectedAnswer = null;
+                currentQuestion = currentStepQuestions[currentQuestionIndex];
+                
+                // UI 업데이트 (문제, 카운터)
+                promptEl.innerHTML = currentQuestion.prompt; // HTML 태그 허용
+                questionCounter.textContent = `(문제 ${currentQuestionIndex + 1} / ${QUESTIONS_PER_STEP})`;
+                
+                // 퀴즈 콘텐츠(출력결과/그래프설명) 표시
+                quizContentDisplay.innerHTML = '';
+                if (currentQuestion.output) {
+                    quizContentDisplay.innerHTML = currentQuestion.output;
+                } else if (currentQuestion.graphDescription) {
+                    quizContentDisplay.innerHTML = `
+                        <div class="graph-description-wrapper">
+                            <strong>[참고 자료]</strong>
+                            <p>${currentQuestion.graphDescription}</p>
+                        </div>
+                    `;
+                }
+                
+                // 문제 유형에 맞는 템플릿 로드
+                if (currentQuestion.type === 'drag') {
+                    renderDragDrop();
+                } else if (currentQuestion.type === 'mc') {
+                    renderMultipleChoice();
+                } else if (currentQuestion.type === 'fill-blank') {
+                    renderFillBlank();
+                }
+                
+                // UI 초기화
+                resetUI();
+            }
+            
+            /** 3-1. 드래그 앤 드롭 문제 렌더링 */
+            function renderDragDrop() {
+                questionContentContainer.innerHTML = ''; // 비우기
+                const templateNode = dragDropTemplate.content.cloneNode(true);
+                questionContentContainer.appendChild(templateNode);
+                
+                const commandList = document.getElementById('command-list');
+                const correctCmd = currentQuestion.answer;
+                
+                // 정답 + 오답 섞기 (distractors는 3개만 사용)
+                const options = [correctCmd, ...currentQuestion.distractors.slice(0, 3)];
+                const commandsToShow = options.sort(() => 0.5 - Math.random());
+                
+                // HTML 요소로 만들기
+                commandsToShow.forEach(cmdText => {
+                    const cmdEl = document.createElement('div');
+                    cmdEl.classList.add('code-block');
+                    cmdEl.textContent = cmdText;
+                    cmdEl.setAttribute('draggable', 'true');
+                    cmdEl.dataset.command = cmdText;
+
+                    cmdEl.addEventListener('dragstart', handleDragStart);
+                    cmdEl.addEventListener('dragend', handleDragEnd);
+                    
+                    commandList.appendChild(cmdEl);
+                });
+                
+                // 드롭존 이벤트 리스너 연결
+                const dropZone = document.getElementById('drop-zone');
+                dropZone.addEventListener('dragover', handleDragOver);
+                dropZone.addEventListener('dragleave', handleDragLeave);
+                dropZone.addEventListener('drop', handleDrop);
+                
+                checkAnswerBtn.style.display = 'none'; // 드래그 문제는 드롭 즉시 확인
+            }
+            
+            /** 3-2. 객관식 문제 렌더링 (*** MODIFIED: 보기 섞기 ***) */
+            function renderMultipleChoice() {
+                questionContentContainer.innerHTML = ''; // 비우기
+                const templateNode = mcTemplate.content.cloneNode(true);
+                questionContentContainer.appendChild(templateNode);
+                
+                const mcContainer = document.getElementById('multiple-choice-container');
+                
+                // 1. 선택지 객체 배열 생성 (텍스트와 원본 인덱스)
+                let choicesWithIndex = currentQuestion.choices.map((text, index) => ({
+                    text: text,
+                    originalIndex: index // 정답은 0, 나머지는 1, 2, 3
+                }));
+
+                // 2. 선택지 배열 섞기
+                choicesWithIndex.sort(() => 0.5 - Math.random());
+                
+                // 3. 섞인 배열로 버튼 생성
+                choicesWithIndex.forEach(choice => {
+                    const choiceBtn = document.createElement('button');
+                    choiceBtn.classList.add('choice-btn');
+                    choiceBtn.innerHTML = choice.text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    // data-original-index에 원본 인덱스(정답=0) 저장
+                    choiceBtn.dataset.originalIndex = choice.originalIndex;
+                    
+                    choiceBtn.addEventListener('click', () => {
+                        if (answeredCorrectly) return; // 정답 맞추면 클릭 방지
+                        
+                        const currentlySelected = mcContainer.querySelector('.choice-btn.selected');
+                        if (currentlySelected) {
+                            currentlySelected.classList.remove('selected');
+                        }
+                        
+                        choiceBtn.classList.add('selected');
+                        // selectedAnswer에 원본 인덱스 저장 (정답이면 0이 저장됨)
+                        selectedAnswer = choice.originalIndex; 
+                        checkAnswerBtn.disabled = false; // 정답 확인 버튼 활성화
+                    });
+                    
+                    mcContainer.appendChild(choiceBtn);
+                });
+                
+                checkAnswerBtn.style.display = 'block'; // 객관식은 확인 버튼 필요
+            }
+            
+            /** 3-3. 빈칸 채우기 문제 렌더링 */
+            function renderFillBlank() {
+                questionContentContainer.innerHTML = ''; // 비우기
+                const templateNode = fillBlankTemplate.content.cloneNode(true);
+                const container = templateNode.getElementById('fill-blank-container');
+                
+                const parts = currentQuestion.text.split('BLANK');
+                
+                const part1 = document.createElement('span');
+                part1.classList.add('code-snippet');
+                part1.textContent = parts[0];
+                container.appendChild(part1);
+                
+                const input = document.createElement('input');
+                input.classList.add('fill-blank-input');
+                input.type = 'text';
+                input.spellcheck = false;
+                input.autocomplete = 'off';
+                input.id = 'fill-blank-answer';
+                container.appendChild(input);
+                
+                if (parts[1]) {
+                    const part2 = document.createElement('span');
+                    part2.classList.add('code-snippet');
+                    part2.textContent = parts[1];
+                    container.appendChild(part2);
+                }
+                
+                questionContentContainer.appendChild(templateNode);
+                
+                input.addEventListener('input', () => {
+                    checkAnswerBtn.disabled = input.value.trim() === '';
+                });
+                
+                checkAnswerBtn.style.display = 'block';
+            }
+
+
+            /** 4. 다음 문제 또는 단계로 이동 */
+            function goToNext() {
+                currentQuestionIndex++;
+                
+                if (currentQuestionIndex < QUESTIONS_PER_STEP) {
+                    // 다음 문제로
+                    loadQuestion();
+                } else {
+                    // 다음 단계로
+                    currentStepIndex++;
+                    if (currentStepIndex < totalSteps) {
+                        loadStep(currentStepIndex);
+                    } else {
+                        // 퀴즈 완료!
+                        showCompletionScreen();
+                    }
+                }
+                updateProgressBar();
+            }
+            
+            /** 5. 퀴즈 완료 화면 표시 (*** MODIFIED: 점수 계산 ***) */
+            function showCompletionScreen() {
+                mainContent.style.display = 'none';
+                completionScreen.style.display = 'block';
+
+                const totalQuestions = totalSteps * QUESTIONS_PER_STEP;
+                const percentage = Math.round((score / totalQuestions) * 100);
+                
+                const scoreDisplay = document.getElementById('score-display');
+                scoreDisplay.innerHTML = `
+                    총 ${totalQuestions} 문제 중 <strong>${score}개</strong>를 맞추셨습니다! (정답률: ${percentage}%)
+                `;
+                
+                const scoreMessage = document.getElementById('score-message');
+                if (percentage > 80) {
+                    scoreMessage.textContent = "훌륭합니다! 데이터 분석 전문가시네요! 🤖";
+                } else if (percentage > 50) {
+                    scoreMessage.textContent = "좋은 점수입니다! 조금만 더 복습해봐요! 👍";
+                } else {
+                    scoreMessage.textContent = "수고하셨습니다! 다시 한번 도전해볼까요? 😊";
+                }
+            }
+            
+            /** 6. UI 초기화 (다음 문제 준비) */
+            function resetUI() {
+                feedback.textContent = '';
+                feedback.className = '';
+                nextStepBtn.style.display = 'none';
+                
+                // --- *** NEW: 해설 숨기기 *** ---
+                explanationEl.style.display = 'none';
+                explanationEl.innerHTML = '';
+                
+                const isDrag = currentQuestion.type === 'drag';
+                checkAnswerBtn.style.display = isDrag ? 'none' : 'block';
+                checkAnswerBtn.disabled = isDrag ? false : true;
+
+                // 드롭존 초기화
+                const dropZone = document.getElementById('drop-zone');
+                if (dropZone) {
+                    dropZone.innerHTML = '<span id="drop-zone-placeholder">이곳에 올바른 명령어를 드래그하세요</span>';
+                    dropZone.style.borderColor = 'var(--border-color)';
+                }
+                
+                // 객관식 버튼 초기화
+                document.querySelectorAll('.choice-btn').forEach(btn => {
+                    btn.disabled = false;
+                    btn.className = 'choice-btn';
+                });
+            }
+            
+            /** 7. 진행도 바 업데이트 */
+            function updateProgressBar() {
+                const totalQuestions = totalSteps * QUESTIONS_PER_STEP;
+                const completedQuestions = (currentStepIndex * QUESTIONS_PER_STEP) + currentQuestionIndex;
+                
+                const progress = (completedQuestions / totalQuestions) * 100;
+                progressBar.style.width = `${progress}%`;
+            }
+
+            // --- 5. 드래그 앤 드롭 이벤트 핸들러 ---
+            function handleDragStart(e) {
+                if (answeredCorrectly) {
+                    e.preventDefault();
+                    return;
+                }
+                draggedCommandElement = e.target;
+                e.dataTransfer.setData('text/plain', e.target.dataset.command);
+                setTimeout(() => e.target.classList.add('dragging'), 0);
+            }
+
+            function handleDragEnd(e) {
+                e.target.classList.remove('dragging');
+            }
+
+            function handleDragOver(e) {
+                e.preventDefault();
+                if (answeredCorrectly) return;
+                const dropZone = document.getElementById('drop-zone');
+                if (dropZone) dropZone.classList.add('dragover');
+            }
+            
+            function handleDragLeave() {
+                const dropZone = document.getElementById('drop-zone');
+                if (dropZone) dropZone.classList.remove('dragover');
+            }
+
+            function handleDrop(e) {
+                e.preventDefault();
+                if (answeredCorrectly) return; 
+                
+                const dropZone = document.getElementById('drop-zone');
+                if (!dropZone) return;
+                
+                dropZone.classList.remove('dragover');
+                
+                if (dropZone.querySelector('.code-block')) {
+                    return;
+                }
+
+                const droppedCommandText = e.dataTransfer.getData('text/plain');
+                const droppedEl = draggedCommandElement; 
+                
+                droppedEl.classList.add('dropped');
+                droppedEl.setAttribute('draggable', 'false');
+                
+                dropZone.innerHTML = ''; // 플레이스홀더 텍스트 제거
+                dropZone.appendChild(droppedEl);
+
+                // 드래그앤드롭은 즉시 정답 확인
+                handleAnswerCheck(droppedCommandText);
+            }
+
+            // --- 6. 정답 확인 (공통 로직) (*** MODIFIED: 점수, 해설 로직 추가 ***) ---
+            function handleAnswerCheck(userAnswerText = null) {
+                if (answeredCorrectly) return; // 중복 확인 방지
+
+                let userAnswer;
+                let isCorrect = false;
+
+                if (currentQuestion.type === 'mc') {
+                    userAnswer = selectedAnswer; // 클릭 시 저장된 originalIndex (정답=0)
+                    isCorrect = (userAnswer === currentQuestion.answer); // currentQuestion.answer는 항상 0
+                } else if (currentQuestion.type === 'fill-blank') {
+                    const input = document.getElementById('fill-blank-answer');
+                    userAnswer = input.value.trim();
+                    isCorrect = (userAnswer.toLowerCase() === currentQuestion.answer.toLowerCase());
+                } else if (currentQuestion.type === 'drag') {
+                    userAnswer = userAnswerText;
+                    isCorrect = (userAnswer === currentQuestion.answer);
+                }
+
+                answeredCorrectly = true; // 일단 확인하면 재시도 불가 (드래그 제외)
+                checkAnswerBtn.style.display = 'none';
+                nextStepBtn.style.display = 'block';
+
+                if (isCorrect) {
+                    feedback.textContent = '정답입니다! 🤖';
+                    feedback.className = 'feedback-correct';
+                    // --- *** NEW: 점수 증가 *** ---
+                    score++; 
+                    
+                    // 정답 시각적 피드백
+                    if (currentQuestion.type === 'mc') {
+                        document.querySelector(`.choice-btn[data-original-index="${userAnswer}"]`).classList.add('correct');
+                    } else if (currentQuestion.type === 'fill-blank') {
+                        document.getElementById('fill-blank-answer').classList.add('correct');
+                    } else if (currentQuestion.type === 'drag') {
+                        document.getElementById('drop-zone').style.borderColor = 'var(--secondary-color)';
+                        answeredCorrectly = true; // 드래그도 정답이면 확정
+                    }
+                    
+                } else {
+                    // 오답!
+                    feedback.textContent = '오답입니다. 😥';
+                    feedback.className = 'feedback-wrong';
+
+                    if (currentQuestion.type === 'mc') {
+                        if(userAnswer !== null) {
+                            document.querySelector(`.choice-btn[data-original-index="${userAnswer}"]`).classList.add('wrong');
+                        }
+                        // 실제 정답(originalIndex가 0인) 버튼에 correct 클래스 추가
+                        document.querySelector(`.choice-btn[data-original-index="${currentQuestion.answer}"]`).classList.add('correct');
+                        
+                    } else if (currentQuestion.type === 'fill-blank') {
+                        const input = document.getElementById('fill-blank-answer');
+                        input.classList.add('wrong');
+                        // 정답 알려주기
+                        input.value = currentQuestion.answer;
+                        input.disabled = true;
+                        
+                    } else if (currentQuestion.type === 'drag') {
+                        // 드래그앤드롭은 오답 시 리셋
+                        answeredCorrectly = false; // 다시 시도 가능
+                        checkAnswerBtn.style.display = 'none';
+                        nextStepBtn.style.display = 'none';
+                        
+                        const dropZone = document.getElementById('drop-zone');
+                        dropZone.style.borderColor = 'var(--accent-color)';
+                        
+                        setTimeout(() => {
+                            if (answeredCorrectly) return; // 그새 정답 맞췄으면 무시
+                            
+                            const droppedEl = dropZone.querySelector('.code-block');
+                            if (droppedEl) {
+                                droppedEl.classList.remove('dropped');
+                                droppedEl.setAttribute('draggable', 'true');
+                                document.getElementById('command-list').appendChild(droppedEl);
+                            }
+                            
+                            dropZone.innerHTML = '<span id="drop-zone-placeholder">이곳에 올바른 명령어를 드래그하세요</span>';
+                            dropZone.style.borderColor = 'var(--border-color)';
+                            feedback.textContent = '';
+                        }, 1200);
+                    }
+                }
+                
+                // --- *** NEW: 해설 표시 (드래그 오답 제외) *** ---
+                if (answeredCorrectly) {
+                    explanationEl.innerHTML = `<strong>[해설]</strong> ${currentQuestion.explanation}`;
+                    explanationEl.style.display = 'block';
+                }
+                
+                // 정답/오답 확인 후 모든 입력 비활성화 (드래그 오답 제외)
+                if (answeredCorrectly) {
+                     if (currentQuestion.type === 'mc') {
+                        document.querySelectorAll('.choice-btn').forEach(btn => btn.disabled = true);
+                    } else if (currentQuestion.type === 'fill-blank') {
+                         document.getElementById('fill-blank-answer').disabled = true;
+                    } else if (currentQuestion.type === 'drag') {
+                         document.querySelectorAll('#command-list .code-block').forEach(el => {
+                            el.setAttribute('draggable', 'false');
+                            el.style.opacity = '0.5';
+                            el.style.cursor = 'not-allowed';
+                        });
+                    }
+                }
+            } // [END of handleAnswerCheck]
+
+
+            // --- 7. 이벤트 리스너 연결 ---
+            checkAnswerBtn.addEventListener('click', () => {
+                handleAnswerCheck(); // MC, Fill-blank
+            });
+            
+            nextStepBtn.addEventListener('click', goToNext);
+            restartBtn.addEventListener('click', startGame);
+
+            // --- 8. 게임 시작 ---
+            startGame();
+        });
+    </script>
+</body>
+</html>
