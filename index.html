@@ -1357,7 +1357,7 @@ petal.width       0.962865     1.000000</pre>`,
 
             function handleDrop(e) {
                 e.preventDefault();
-                e.stopPropagation(); // [추가] 이벤트 전파 중단
+                e.stopPropagation(); // [추가] 이벤트 전파 중단 (터치에서 중요)
 
                 // [수정] 드래그 중인 아이템이 없으면(취소됨) 종료
                 if (!draggedItem) {
@@ -1381,6 +1381,13 @@ petal.width       0.962865     1.000000</pre>`,
                     // 정답 버튼 클릭을 시뮬레이션 (드래그 문제는 즉시 확인)
                     handleAnswerCheck(); 
                 }
+                
+                handleDragLeave(e); // 테두리 정리
+                
+                // [수정] 드롭 성공 후 상태 초기화 (handleDragEnd보다 먼저 실행됨)
+                draggedItem = null;
+                draggedItemData = null;
+            }
                 
                 handleDragLeave(e); // 테두리 정리
                 
