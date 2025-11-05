@@ -1001,6 +1001,9 @@ petal.width       0.962865     1.000000</pre>`,
             let selectedAnswer = null; // 선택된 답 (객관식: originalIndex, 빈칸: text)
             let draggedCommandElement = null; // 현재 드래그 중인 HTML 요소
             let answeredCorrectly = false;
+            let draggedItem = null; // [✨ 추가] 드래그/터치 중인 DOM 요소
+            let draggedItemData = null; // [✨ 추가] 드래그/터치 중인 데이터 값
+            
             
             // --- *** NEW: 점수 변수 *** ---
             let score = 0;
@@ -1119,6 +1122,19 @@ petal.width       0.962865     1.000000</pre>`,
 
                     cmdEl.addEventListener('dragstart', handleDragStart);
                     cmdEl.addEventListener('dragend', handleDragEnd);
+		    // --- [✨ 터치 이벤트 추가 (드래그 항목)] ---
+                    cmdEl.addEventListener('touchstart', function(e) {
+                        handleDragStart.call(this, e); // 'this'를 cmdEl로 설정
+                    }, { passive: true }); // 스크롤 성능을 위해 passive 설정
+
+                    cmdEl.addEventListener('touchend', function(e) {
+                        // 드롭존이 아닌 곳에서 손을 떼면 (취소)
+                        // handleDrop이 먼저 실행되었다면 draggedItem이 null이 됨
+                        if (draggedItem) {
+                            handleDragEnd(e);
+                        }
+                    });
+                    // --- [코드 추가 끝] ---
                     
                     commandList.appendChild(cmdEl);
                 });
@@ -1128,6 +1144,17 @@ petal.width       0.962865     1.000000</pre>`,
                 dropZone.addEventListener('dragover', handleDragOver);
                 dropZone.addEventListener('dragleave', handleDragLeave);
                 dropZone.addEventListener('drop', handleDrop);
+		// --- [✨ 터치 이벤트 추가 (드롭 영역)] ---
+                dropZone.addEventListener('touchmove', function(e) {
+                    e.preventDefault(); // 스크롤 방지
+                    handleDragOver(e);  // 테두리 효과
+                }, { passive: false }); // preventDefault를 위해 passive: false
+
+                dropZone.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    handleDrop(e); // 드롭 실행
+                });
+                // --- [코드 추가 끝] ---
                 
                 checkAnswerBtn.style.display = 'none'; // 드래그 문제는 드롭 즉시 확인
             }
@@ -1297,17 +1324,23 @@ petal.width       0.962865     1.000000</pre>`,
 
             // --- 5. 드래그 앤 드롭 이벤트 핸들러 ---
             function handleDragStart(e) {
-                if (answeredCorrectly) {
-                    e.preventDefault();
-                    return;
+                this.classList.add('dragging');
+                draggedItem = this; // [수정] 전역 변수에 요소 저장
+                draggedItemData = this.dataset.value; // [수정] 전역 변수에 데이터 저장
+                
+                // 마우스 드래그를 위해 dataTransfer도 설정
+                if (e.dataTransfer) {
+                    e.dataTransfer.setData('text/plain', this.dataset.value);
                 }
-                draggedCommandElement = e.target;
-                e.dataTransfer.setData('text/plain', e.target.dataset.command);
-                setTimeout(() => e.target.classList.add('dragging'), 0);
             }
 
-            function handleDragEnd(e) {
-                e.target.classList.remove('dragging');
+           function handleDragEnd() {
+                if (draggedItem) {
+                    draggedItem.classList.remove('dragging');
+                }
+                // [수정] 전역 변수 초기화
+                draggedItem = null; 
+                draggedItemData = null;
             }
 
             function handleDragOver(e) {
@@ -1324,28 +1357,36 @@ petal.width       0.962865     1.000000</pre>`,
 
             function handleDrop(e) {
                 e.preventDefault();
-                if (answeredCorrectly) return; 
-                
-                const dropZone = document.getElementById('drop-zone');
-                if (!dropZone) return;
-                
-                dropZone.classList.remove('dragover');
-                
-                if (dropZone.querySelector('.code-block')) {
+                e.stopPropagation(); // [추가] 이벤트 전파 중단
+
+                // [수정] 드래그 중인 아이템이 없으면(취소됨) 종료
+                if (!draggedItem) {
+                    handleDragLeave(e);
                     return;
                 }
 
-                const droppedCommandText = e.dataTransfer.getData('text/plain');
-                const droppedEl = draggedCommandElement; 
+                // [수정] 마우스(dataTransfer) 또는 터치(draggedItemData)에서 데이터 가져오기
+                const data = (e.dataTransfer) ? e.dataTransfer.getData('text/plain') : draggedItemData;
                 
-                droppedEl.classList.add('dropped');
-                droppedEl.setAttribute('draggable', 'false');
+                userAnswerText = data; // 전역 userAnswerText에 할당
                 
-                dropZone.innerHTML = ''; // 플레이스홀더 텍스트 제거
-                dropZone.appendChild(droppedEl);
-
-                // 드래그앤드롭은 즉시 정답 확인
-                handleAnswerCheck(droppedCommandText);
+                // 기존 드롭 로직 (draggedItem 사용)
+                if (draggedItem) {
+                    dropZone.innerHTML = '';
+                    dropZone.appendChild(draggedItem);
+                    draggedItem.style.cursor = 'default';
+                    
+                    checkAnswerBtn.style.display = 'block';
+                    
+                    // 정답 버튼 클릭을 시뮬레이션 (드래그 문제는 즉시 확인)
+                    handleAnswerCheck(); 
+                }
+                
+                handleDragLeave(e); // 테두리 정리
+                
+                // [수정] 드롭 성공 후 상태 초기화 (handleDragEnd보다 먼저 실행됨)
+                draggedItem = null;
+                draggedItemData = null;
             }
 
             // --- 6. 정답 확인 (공통 로직) (*** MODIFIED: 점수, 해설 로직 추가 ***) ---
